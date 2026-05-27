@@ -4302,7 +4302,7 @@ Current asset base uses the public Maximus Google Drive gallery for improved rel
           form.appendChild(status);
         }
 
-        const endpoint = (form.dataset.endpoint || "").trim();
+        const endpoint = (form.dataset.endpoint || "https://script.google.com/macros/s/AKfycbw0cjIIktz0z05wmlg5pOclQcOgfRrHAZufeksUapMoQfLSEDB_0wjRkCIOWoUe_mvH/exec").trim();
         const original = btn.innerHTML;
         const payload = Object.fromEntries(new FormData(form).entries());
 
