@@ -3846,7 +3846,7 @@ Current asset base uses the public Maximus Google Drive gallery for improved rel
             class="booking-form"
             data-aos="fade-left"
             id="bookingForm"
-            data-endpoint="https://script.google.com/macros/s/AKfycbyQYbPA40keAelZ3m23chNynAlm1cNbifTezTCJM4RZPIVTSTu715eS-tz-Lk3ucm2d/exec"
+            data-endpoint="https://script.google.com/macros/s/AKfycbxIPmLhhuxoT5tOu_5oEA9Xt5KNoyE-Ui-uL2mbMizjGwRM0C6fPg5RdEz81-UZIBuJ/exec"
             data-provider="google-apps-script"
             onsubmit="submitBooking(event)"
           >
@@ -4288,33 +4288,23 @@ Current asset base uses the public Maximus Google Drive gallery for improved rel
         el.classList.toggle("open");
       }
 
-      // Booking submit
+      // Booking submit — FormData-based (no CORS preflight issues)
       async function submitBooking(e) {
         e.preventDefault();
         const form = document.getElementById("bookingForm");
         const btn = document.getElementById("formSubmitBtn");
         const success = document.getElementById("formSuccess");
-        let status = document.getElementById("formStatus");
-        if (!status) {
-          status = document.createElement("div");
-          status.id = "formStatus";
-          status.className = "form-status";
-          form.appendChild(status);
-        }
-
-        const endpoint = (form.dataset.endpoint || "https://script.google.com/macros/s/AKfycbw0cjIIktz0z05wmlg5pOclQcOgfRrHAZufeksUapMoQfLSEDB_0wjRkCIOWoUe_mvH/exec").trim();
+        const helper = document.getElementById("formHelperNote");
         const original = btn.innerHTML;
-        const payload = Object.fromEntries(new FormData(form).entries());
 
-        btn.innerHTML =
-          '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+        const endpoint = (form.dataset.endpoint || "").trim();
+
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
         btn.disabled = true;
-        status.textContent = "";
 
         if (!endpoint) {
           success.style.display = "block";
-          status.textContent =
-            "Setup pending: add your Google Apps Script URL to data-endpoint when deploying.";
+          if (helper) helper.style.display = "block";
           form.reset();
           btn.innerHTML = original;
           btn.disabled = false;
@@ -4322,18 +4312,23 @@ Current asset base uses the public Maximus Google Drive gallery for improved rel
         }
 
         try {
-          await fetch(endpoint, {
+          const response = await fetch(endpoint, {
             method: "POST",
-            mode: "cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: new FormData(form)
           });
-          success.style.display = "block";
-          status.textContent = "Form connected successfully.";
-          form.reset();
+
+          const result = await response.json().catch(() => ({}));
+
+          if (response.ok || result.result === "success") {
+            success.style.display = "block";
+            if (helper) helper.style.display = "none";
+            form.reset();
+          } else {
+            throw new Error(result.error || "Submission failed");
+          }
         } catch (err) {
-          status.textContent =
-            "Could not send form right now. Please check the Apps Script deployment URL or CORS settings.";
+          alert("Could not send form. Please try WhatsApp booking instead.");
+          console.error(err);
         } finally {
           btn.innerHTML = original;
           btn.disabled = false;
